@@ -1,12 +1,11 @@
 package com.demo.core.allure;
 
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import io.qameta.allure.Attachment;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
-
-import static com.codeborne.selenide.Screenshots.takeScreenShotAsFile;
-import static com.google.common.io.Files.toByteArray;
 
 public class AllureTools {
     private static File newFile;
@@ -14,10 +13,10 @@ public class AllureTools {
 
     @SuppressWarnings({"UnusedReturnValue", "UnstableApiUsage"})
     @Attachment(value = "Page Screenshot", type = "image/png")
-    public static byte[] attachScreenshot() {
+    public static byte[] attachScreenshot(Page page) {
         try {
-            return toByteArray(takeScreenShotAsFile());
-        } catch (IOException e) {
+            return page.screenshot(new Page.ScreenshotOptions().setFullPage(true));
+        } catch (PlaywrightException e) {
             return new byte[0];
         }
     }

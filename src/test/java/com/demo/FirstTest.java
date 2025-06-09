@@ -5,6 +5,7 @@ import com.demo.pages.Pages;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Owner;
+import org.junit.Assert;
 import org.testng.annotations.Test;
 
 @Epic("Test Epic")
@@ -14,7 +15,6 @@ public class FirstTest extends BaseTest {
 
     @Test(description = "GoogleSearchTest")
     public void firstTest() {
-
-
+        Assert.assertTrue(true);
     }
 }

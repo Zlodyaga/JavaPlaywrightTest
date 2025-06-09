@@ -1,24 +1,25 @@
 package com.demo.core.base;
 
-import com.codeborne.selenide.*;
 import com.demo.core.allure.AllureLogger;
 import com.demo.utils.LocatorParser;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.Color;
+import com.demo.utils.PlaywrightTools;
+import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.WaitForSelectorState;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-import static com.codeborne.selenide.CollectionCondition.sizeGreaterThan;
-import static com.codeborne.selenide.CollectionCondition.sizeGreaterThanOrEqual;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$$;
 
 public class PageTools extends AllureLogger {
+
+    private final Page page;
+
+    public PageTools(Page page) {
+        this.page = page;
+    }
 
     private static String getPreviousMethodNameAsText() {
         String methodName = Thread.currentThread().getStackTrace()[3].getMethodName();
@@ -33,225 +34,136 @@ public class PageTools extends AllureLogger {
         return replacedMethodName.substring(0, 1).toUpperCase() + replacedMethodName.substring(1).toLowerCase();
     }
 
-    private By byLocator(By by, Object... args) {
-        return LocatorParser.parseLocator(by, args);
-    }
-
-    protected SelenideElement getSelenideElement(By by, Object... args) {
-        return $(byLocator(by, args));
-    }
-
-    protected Actions getActions() {
-        return Selenide.actions();
+    private Locator byLocator(String by, Object... args) {
+        return LocatorParser.parseLocator(page, by, args);
     }
 
     /**
      * Should be
      */
-    protected ElementsCollection shouldBe(CollectionCondition condition, By by, Object... args) {
-        return $$(byLocator(by, args)).shouldBe(condition);
+    protected void shouldMatchText(String pattern, String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            String actualText = locator.innerText();
+            if (!actualText.matches(pattern)) {
+                throw new AssertionError("Text does not match pattern.\nExpected regex: " + pattern + "\nActual text: " + actualText);
+            }
+        });
     }
 
-    protected SelenideElement shouldBe(Condition condition, By by, Object... args) {
-        return $(byLocator(by, args)).shouldBe(condition);
+    protected void shouldNotBeEmpty(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            String actualText = locator.innerText().trim();
+            if (actualText.isEmpty()) {
+                throw new AssertionError("Element text is empty, but should not be.");
+            }
+        });
     }
 
-    protected SelenideElement shouldMatchText(String pattern, By by, Object... args) {
-        return $(byLocator(by, args)).should(Condition.matchText(pattern));
+    protected void shouldNotHaveClass(String className, String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            if (locator.getAttribute("class") != null && locator.getAttribute("class").contains(className)) {
+                throw new AssertionError("Element has class '" + className + "' but should not.");
+            }
+        });
     }
 
-    protected void shouldNotBeEmpty(By by, Object... args) {
-        $(byLocator(by, args)).shouldNotBe(Condition.empty);
-    }
-
-    protected void shouldNotHaveClass(String className, By by, Object... args) {
-        $(byLocator(by, args)).shouldNotHave(Condition.cssClass(className));
-    }
-
-    protected void shouldHaveClass(String className, By by, Object... args) {
-        $(byLocator(by, args)).shouldHave(Condition.cssClass(className));
+    protected void shouldHaveClass(String className, String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            String classes = locator.getAttribute("class");
+            if (classes == null || !classes.contains(className)) {
+                throw new AssertionError("Element does not have expected class '" + className + "'. Actual classes: " + classes);
+            }
+        });
     }
 
     /**
      * Main Actions
      */
-    protected void click(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        shouldBe(Condition.visible, by, args).click();
+    protected void click(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::click);
     }
 
-    protected void clickIfExist(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        shouldBe(Condition.exist, by, args).click();
+    protected void jsClick(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.evaluate("el => el.click()");
+        });
     }
 
-    protected void clickNotVisible(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        shouldBe(Condition.hidden, by, args).click();
+    protected void type(String text, String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.type(text);
+        });
     }
 
-    protected void jsClick(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        waitForElementClickable(by, args);
-        Selenide.executeJavaScript("arguments[0].click();", shouldBe(Condition.exist, by, args));
+    protected void typeFill(String text, String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.fill(text);
+        });
     }
 
-    protected boolean isImageLoaded(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        String script = "return arguments[0].complete && "
-                + "typeof arguments[0].naturalWidth != \"undefined\" && "
-                + "arguments[0].naturalWidth > 0";
-        return Selenide.executeJavaScript(script, shouldBe(Condition.exist, by, args));
+    protected void wipeText(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.fill("");
+        });
     }
 
-    protected void actionClick(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        Actions builder = getActions();
-        builder.moveToElement(getWebElement(byLocator(by, args))).click();
-        builder.perform();
+    protected void uploadFile(String filePath, String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.setInputFiles(Paths.get(filePath));
+        });
     }
 
-    protected void type(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " '" + text);
-        wipeText(by, args);
-        shouldBe(Condition.visible, by, args).append(text);
+    protected void mouseHover(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::hover);
     }
 
-    protected void jsType(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " '" + text);
-        waitForElementClickable(by, args);
-        Selenide.executeJavaScript("arguments[0].value = '" + text + "';", shouldBe(Condition.exist, by, args));
+    protected void clickEnterButton(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.press("Enter");
+        });
     }
 
-    protected void jsSetValue(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " '" + text);
-        Selenide.executeJavaScript("arguments[0].setAttribute('value', '" + text + "');", shouldBe(Condition.exist, by, args));
+    protected void waitForElementVisibility(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+        });
     }
 
-    protected void jsRiseOnchange(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        Selenide.executeJavaScript("arguments[0].dispatchEvent(new Event('change', { 'bubbles': true }))", shouldBe(Condition.exist, by, args));
+    protected void waitForElementInvisibility(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+        });
     }
 
-    protected void typeWithActions(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        WebElement target = getWebElement(by, args);
-        getActions().moveToElement(target).sendKeys(target, text).build().perform();
-    }
-
-    protected void typeWithActions(String text) {
-        getActions().sendKeys(text).build().perform();
-    }
-
-    protected void typeWithEnter(String text, By by, Object... args) {
-        wipeText(by, args);
-        shouldBe(Condition.visible, by, args).sendKeys(text + Keys.ENTER);
-    }
-
-    protected void typeWithoutLogs(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText());
-        wipeText(by, args);
-        shouldBe(Condition.visible, by, args).append(text);
-    }
-
-    protected void uploadFile(String filePath, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " '" + filePath + "', element --> " + byLocator(by, args));
-        wipeText(by, args);
-        shouldBe(Condition.enabled, by, args).uploadFile(new File(filePath));
-    }
-
-    protected void uploadFiles(List<String> filePaths, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " files: " + filePaths.toString() + ", element --> " + byLocator(by, args));
-        wipeText(by, args);
-        shouldBe(Condition.enabled, by, args).uploadFile(filePaths.stream().map(File::new).toArray(File[]::new));
-    }
-
-    protected void typeWithoutWipe(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " '" + text + "', element --> " + byLocator(by, args));
-        shouldBe(Condition.visible, by, args).append(text);
-    }
-
-    protected void wipeText(By by, Object... args) {
-        int stringSize = shouldBe(Condition.enabled, by, args).getWrappedElement().getAttribute("value").length();
-        for (int i = 0; i < stringSize; i++) {
-            shouldBe(Condition.enabled, by, args).sendKeys(Keys.BACK_SPACE);
+    protected void waitForElementClickable(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+        });
+        for(int i = 0; i < 25; i++) {
+            if(isElementClickable(selector, args)) {
+                return;
+            }
+            PlaywrightTools.sleep(1);
         }
-    }
-
-    protected void typeIntoFrame(String text, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " '" + text + "', element --> " + byLocator(by, args));
-        shouldBe(Condition.visible, by, args).clear();
-        shouldBe(Condition.visible, by, args).sendKeys(text);
-    }
-
-    protected void selectOption(String option, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + " --> " + option + ", element --> " + byLocator(by, args));
-        shouldBe(Condition.visible, by, args).selectOption(option);
-    }
-
-    protected void mouseHover(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        shouldBe(Condition.visible, by, args).hover();
-    }
-
-    protected void clickEnterButton() {
-        getActions().sendKeys(Keys.ENTER).perform();
-
-    }
-
-    protected void waitForElementVisibility(By by, Object... args) {
-        shouldBe(Condition.visible, by, args);
-    }
-
-    protected void waitForElementPresent(By by, Object... args) {
-        shouldBe(Condition.exist, by, args);
-    }
-
-    protected void waitForElementNotPresent(By by, Object... args) {
-        shouldBe(Condition.not(Condition.exist), by, args);
-    }
-
-    protected void waitForElementInvisibility(By by, Object... args) {
-        shouldBe(Condition.hidden, by, args);
-    }
-
-    protected void waitForElementDisabled(By by, Object... args) {
-        shouldBe(Condition.disabled, by, args);
-    }
-
-    protected void waitForElementClickable(By by, Object... args) {
-        shouldBe(Condition.visible, by, args);
-        shouldBe(Condition.enabled, by, args);
     }
 
     /**
      * Is condition
      */
-    /*Working without wait*/
-    protected boolean isCondition(Condition condition, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", condition --> " + condition.getName() + ", element --> " + byLocator(by, args));
-        return getSelenideElement(by, args).is(condition);
+    protected boolean isElementVisible(String selector, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isVisible, args);
     }
 
-    /*Working with wait*/
-    protected boolean isElementVisible(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return isCondition(Condition.visible, by, args);
+    protected boolean isElementClickable(String selector, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isEnabled, args);
     }
 
-    protected boolean isElementClickable(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return isCondition(Condition.enabled, by, args);
+    protected boolean isElementDisabled(String selector, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isDisabled, args);
     }
 
-    protected boolean isElementDisabled(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return isCondition(Condition.disabled, by, args);
-    }
-
-    protected boolean isElementChecked(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return isCondition(Condition.checked, by, args);
+    protected boolean isElementChecked(String selector, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isChecked, args);
     }
 
 //    protected boolean isElementExist{
@@ -262,90 +174,95 @@ public class PageTools extends AllureLogger {
     /**
      * Getters
      */
-    protected String getElementText(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return shouldBe(Condition.enabled, by, args).text();
+    protected String getElementText(String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::innerText);
     }
 
-    protected String getElementAttributeValue(String attr, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return shouldBe(Condition.exist, by, args).attr(attr);
+    protected String getElementAttributeValue(String attr, String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, locator -> locator.getAttribute(attr));
     }
 
-    protected String getHiddenElementAttributeValue(String attr, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return shouldBe(Condition.hidden, by, args).attr(attr);
+    protected String getHiddenElementAttributeValue(String attr, String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            if (!locator.isHidden()) {
+                throw new AssertionError("Element is not hidden");
+            }
+            return locator.getAttribute(attr);
+        });
     }
 
-    protected String getDisabledElementAttributeValue(String attr, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + byLocator(by, args));
-        return shouldBe(Condition.disabled, by, args).attr(attr);
+    protected String getDisabledElementAttributeValue(String attr, String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            if (!locator.isDisabled()) {
+                throw new AssertionError("Element is not disabled");
+            }
+            return locator.getAttribute(attr);
+        });
     }
 
-    protected List<SelenideElement> getElements(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        return shouldBe(sizeGreaterThan(0), by, args);
+    protected List<String> getElementsText(String selector, Object... args) {
+        Locator locator = byLocator(selector, args);
+        logInfo(getPreviousMethodNameAsText() + ", elements --> " + locator);
+        return locator.allInnerTexts();
     }
 
-    protected List<SelenideElement> getElementsWithZeroOption(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        return shouldBe(sizeGreaterThanOrEqual(0), by, args);
+    protected List<String> getElementsTextWithWait(int waitTimeout, String selector, Object... args) {
+        Locator locator = byLocator(selector, args);
+        logInfo(getPreviousMethodNameAsText() + ", elements --> " + locator);
+        PlaywrightTools.sleep(waitTimeout);
+        return locator.allInnerTexts();
     }
 
-    protected List<SelenideElement> getElementsWithZeroOptionWithWait(int waitTimeout, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        Selenide.sleep(waitTimeout * 1000L);
-        return shouldBe(sizeGreaterThanOrEqual(0), by, args);
+    protected void scrollToElement(String selector, Object... args) {
+        Locator locator = byLocator(selector, args);
+        logInfo(getPreviousMethodNameAsText() + ", element --> " + locator);
+        locator.scrollIntoViewIfNeeded();
     }
 
-    protected List<String> getElementsText(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        return shouldBe(sizeGreaterThan(0), by, args).texts();
+    protected void scrollToPlaceElementInCenter(String selector, Object... args) {
+        Locator locator = byLocator(selector, args);
+        logInfo(getPreviousMethodNameAsText() + ", element --> " + locator);
+        page.evaluate("el => el.scrollIntoView({block: 'center'})", locator);
     }
 
-    protected List<String> getElementsTextWithWait(int waitTimeout, By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        Selenide.sleep(waitTimeout * 1000L);
-        return shouldBe(sizeGreaterThanOrEqual(0), by, args).texts();
-    }
-
-    protected void scrollToElement(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        waitForElementVisibility(by);
-        Selenide.executeJavaScript("arguments[0].scrollIntoView();", getWebElement(byLocator(by, args)));
-    }
-
-    protected void scrollToPlaceElementInCenter(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        waitForElementVisibility(by);
-        Selenide.executeJavaScript("arguments[0].scrollIntoView({block: \"center\"});", getWebElement(byLocator(by, args)));
-    }
-
-    protected WebElement getWebElement(By by, Object... args) {
-        return WebDriverRunner.getWebDriver().findElement(byLocator(by, args));
-    }
-
-    protected void clickCancelForShadowElementVisible(By by, Object... args) {
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + byLocator(by, args));
-        Selenide.executeJavaScript("arguments[0].shadowRoot.querySelector(\"#sidebar\").shadowRoot.querySelector(\"print-preview-button-strip\").shadowRoot.querySelector(\"div > cr-button.cancel-button\")", getWebElement(byLocator(by, args)));
+    protected ElementHandle getWebElement(String selector, Object... args) {
+        Locator locator = byLocator(selector, args);
+        return locator.elementHandle();
     }
 
     /**
      * Work with colors
      */
-    protected boolean isColorMatch(String actual, String expected) {
-        Color actualColor = Color.fromString(actual);
-        Color expectedColor = Color.fromString(expected);
-
-        return actualColor.equals(expectedColor);
+    protected Path downloadFile(String selector, Object... args) {
+        try {
+            Locator locator = byLocator(selector, args);
+            Download download = page.waitForDownload(() -> locator.click());
+            return download.path();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    protected File downloadFile(By by, Object... args) {
-        try {
-            return getSelenideElement(by, args).download();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
+    /**
+    Private methods
+     */
+
+    private boolean checkLocatorState(String methodName, String selector, Function<Locator, Boolean> stateCheck, Object... args) {
+        Locator parsedLocator = byLocator(selector, args);
+        logInfo(methodName + ", element --> " + parsedLocator);
+        return stateCheck.apply(parsedLocator);
+    }
+
+    private void performOnLocator(String methodName, String selector, Object[] args, Consumer<Locator> action) {
+        Locator parsedLocator = byLocator(selector, args);
+        logInfo(methodName + ", element --> " + parsedLocator);
+        action.accept(parsedLocator);
+    }
+
+    private <T> T extractFromLocator(String methodName, String selector, Object[] args, Function<Locator, T> extractor) {
+        Locator parsedLocator = byLocator(selector, args);
+        logInfo(methodName + ", element --> " + parsedLocator);
+        return extractor.apply(parsedLocator);
     }
 }

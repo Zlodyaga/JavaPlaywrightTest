@@ -1,6 +1,8 @@
 package com.demo.core.base;
 
 import com.demo.core.allure.AllureTools;
+import com.demo.core.config.PlaywrightConfig;
+import com.demo.utils.PlaywrightTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.ITestContext;
@@ -27,14 +29,14 @@ public class TestListener implements ITestListener {
     @Override
     public void onTestFailure(ITestResult iTestResult) {
         LOG.error("FAILED test: {}", getTestMethodName(iTestResult));
-        AllureTools.attachScreenshot();
+        AllureTools.attachScreenshot(PlaywrightConfig.getPage());
         AllureTools.attachLogFile();
     }
 
     @Override
     public void onTestSkipped(ITestResult iTestResult) {
         LOG.error("SKIPPED test: {}", getTestMethodName(iTestResult));
-        AllureTools.attachScreenshot();
+        AllureTools.attachScreenshot(PlaywrightConfig.getPage());
         AllureTools.attachLogFile();
     }
 

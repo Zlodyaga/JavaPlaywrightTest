@@ -15,7 +15,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <testng>7.10.2</testng>
-        <selenide>6.19.1</selenide>
         <junit.version>5.11.3</junit.version>
         <logback>1.5.12</logback>
         <allure.version>2.29.0</allure.version>
@@ -41,20 +40,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.codeborne</groupId>
-            <artifactId>selenide</artifactId>
-            <version>${selenide}</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-testng</artifactId>
-            <version>${allure.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.qameta.allure</groupId>
-            <artifactId>allure-selenide</artifactId>
             <version>${allure.version}</version>
         </dependency>
 
@@ -108,6 +95,21 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
+        </dependency>
+
+        <!-- Cucumber -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>7.23.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Playwright -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.50.0</version>
         </dependency>
 
     </dependencies>

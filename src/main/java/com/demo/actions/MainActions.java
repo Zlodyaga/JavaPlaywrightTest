@@ -1,7 +1,8 @@
 package com.demo.actions;
 
-import com.codeborne.selenide.Selenide;
-import com.codeborne.selenide.WebDriverRunner;
+import com.demo.core.config.PlaywrightConfig;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Page;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -9,24 +10,32 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
 public class MainActions {
+    private final Page page;
+    private final BrowserContext context;
 
-    public void switchToTab(int index) {
-        Selenide.switchTo().window(index);
+    public MainActions() {
+        this.page = PlaywrightConfig.getPage();
+        this.context = this.page.context();
+    }
+
+    public MainActions(Page page) {
+        this.page = page;
+        this.context = page.context();
     }
 
     public void openNewTab() {
-        Selenide.executeJavaScript("window.open()");
+        context.newPage();
     }
 
     public void openLinkFromClipboard() throws IOException, UnsupportedFlavorException {
         String clipboardValue = Toolkit.getDefaultToolkit()
                 .getSystemClipboard().getData(DataFlavor.stringFlavor).toString();
 
-        Selenide.executeJavaScript("window.location.href = '" + clipboardValue + "'");
+        page.navigate(clipboardValue);
     }
 
     public String getCurrentUrl() {
-        return WebDriverRunner.getWebDriver().getCurrentUrl();
+        return page.url();
     }
 
 }

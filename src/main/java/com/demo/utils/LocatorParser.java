@@ -1,34 +1,32 @@
 package com.demo.utils;
 
-import org.openqa.selenium.By;
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import java.util.MissingFormatArgumentException;
 
 public class LocatorParser {
-    public static By parseLocator(By by, Object... args) {
-        String locatorFormat = locatorPattern(by.toString(), args);
-        String locatorType = getLocatorTypeName(by);
+    public static Locator parseLocator(Page page, String pattern, Object... args) {
+        String formatted = formatPattern(pattern, args);
 
-        switch (locatorType) {
-            case "ByCssSelector":
-                return By.cssSelector(locatorFormat);
-            case "ById":
-                return By.id(locatorFormat);
-            case "ByName":
-                return By.name(locatorFormat);
-            case "ByClassName":
-                return By.className(locatorFormat);
-            case "ByTagName":
-                return By.tagName(locatorFormat);
-            default:
-                return By.xpath(locatorFormat);
+        // Если начинается с "/" или "//" — это XPath
+        if (formatted.startsWith("/") || formatted.startsWith("//")) {
+            return page.locator("xpath=" + formatted);
         }
+
+        // Во всех остальных случаях — CSS-селектор
+        return page.locator(formatted);
     }
 
-    private static String locatorPattern(String str, Object... args) throws MissingFormatArgumentException {
-        return String.format(str.replaceAll("By\\.[^:]*:", "").trim(), args);
-    }
-
-    private static String getLocatorTypeName(By by) {
-        return by.getClass().getSimpleName();
+    /**
+     * Форматирует строку через String.format, пробрасывая понятную ошибку
+     * в случае несоответствия количества аргументов.
+     */
+    private static String formatPattern(String pattern, Object... args) {
+        try {
+            return String.format(pattern.trim(), args);
+        } catch (MissingFormatArgumentException e) {
+            throw new MissingFormatArgumentException(
+                    "Неверное количество аргументов для паттерна: `" + pattern + "`");
+        }
     }
 }
