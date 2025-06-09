@@ -4,31 +4,36 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02ff0a1b-49a3-4c80-aa43-9bc06c1fbb98" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="02ff0a1b-49a3-4c80-aa43-9bc06c1fbb98" name="Changes" comment="Added sample for Playwright">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/demo/core/logger/DefaultLogger.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/demo/bdd/GoogleStepDefinitions.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/demo/bdd/StepsLogger.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/demo/bdd/TestRunner.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/test.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/resources/features/testFeature.feature" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/actions/MainActions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/actions/MainActions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/core/allure/AllureTools.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/core/allure/AllureTools.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/core/base/BaseTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/core/base/BaseTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/core/base/PageTools.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/core/base/PageTools.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/core/base/TestListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/core/base/TestListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/core/config/SelenideConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/core/config/PlaywrightConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/utils/LocatorParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/utils/LocatorParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/demo/utils/SelenideTools.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/demo/utils/PlaywrightTools.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/demo/FirstTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/demo/FirstTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/demo/FirstTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/resources/AllTest.xml" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 1
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="2yGXAXLz1qGhc5RsvQpOeqlYvzi" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -36,11 +41,15 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Cucumber Java.Scenario: C11, Check google.executor": "Debug",
     "Maven.demo-automation [clean,-Dbrowser=chrome...].executor": "Run",
+    "Maven.demo-automation [clean,compile].executor": "Run",
+    "Maven.demo-automation [clean,test...].executor": "Run",
     "Maven.demo-automation [clean,test].executor": "Run",
+    "Maven.demo-automation [test...].executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "sample",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "last_opened_file_path": "C:/Users/AQA/IdeaProjects/sample",
@@ -55,13 +64,42 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="com.demo" />
+    </key>
+  </component>
   <component name="RunAnythingCache">
     <option name="myCommands">
       <command value="mvn clean -Dbrowser=chrome test" />
       <command value="mvn clean test" />
+      <command value="mvn test -Dcucumber.filter.tags=@CTEST" />
+      <command value="mvn clean compile" />
+      <command value="mvn clean test -Dcucumber.filter.tags=&quot;@CTEST&quot; -Dplaywright.browser=chrome -Dheadless=false" />
+      <command value="mvn clean test -Dcucumber.filter.tags=@CTEST" />
     </option>
   </component>
   <component name="RunManager">
+    <configuration name="Scenario: C11, Check google" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java" temporary="true" nameIsGenerated="true">
+      <option name="CUCUMBER_CORE_VERSION" value="5" />
+      <option name="FILE_PATH" value="$PROJECT_DIR$/src/test/resources/features/testFeature.feature" />
+      <option name="GLUE" value="com.demo.bdd" />
+      <option name="MAIN_CLASS_NAME" value="io.cucumber.core.cli.Main" />
+      <module name="demo-automation" />
+      <option name="NAME_FILTER" value="^C11\, Check google$" />
+      <option name="PROGRAM_PARAMETERS" value=" --plugin org.jetbrains.plugins.cucumber.java.run.CucumberJvm5SMFormatter --name &quot;^C11\, Check google$&quot;" />
+      <option name="SUGGESTED_NAME" value="Scenario: C11, Check google" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.cucumber.core.cli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="JetRunConfigurationType">
       <module name="sample" />
       <method v="2">
@@ -73,6 +111,11 @@
       <option name="filePath" />
       <method v="2" />
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cucumber Java.Scenario: C11, Check google" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -90,6 +133,7 @@
       <option name="presentableId" value="Default" />
       <updated>1749461740240</updated>
       <workItem from="1749461741301" duration="11711000" />
+      <workItem from="1749476509889" duration="4906000" />
     </task>
     <servers />
   </component>

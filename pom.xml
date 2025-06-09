@@ -15,13 +15,14 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <testng>7.10.2</testng>
+        <cucumber.version>7.14.0</cucumber.version>
+        <junit.platform.version>1.9.3</junit.platform.version>
         <junit.version>5.11.3</junit.version>
         <logback>1.5.12</logback>
         <allure.version>2.29.0</allure.version>
         <aspectj.version>1.9.22.1</aspectj.version>
         <test.resource.dir>src${file.separator}test${file.separator}resources</test.resource.dir>
         <uploads.dir>${test.resource.dir}${file.separator}uploads${file.separator}</uploads.dir>
-        <suiteXmlFile>AllTest</suiteXmlFile>
         <main.resource.dir>${project.basedir}${file.separator}src${file.separator}main${file.separator}resources
         </main.resource.dir>
     </properties>
@@ -101,8 +102,20 @@
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
-            <version>7.23.0</version>
+            <version>${cucumber.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit</artifactId>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-testng</artifactId>
+            <version>${cucumber.version}</version>
         </dependency>
 
         <!-- Playwright -->
@@ -111,7 +124,6 @@
             <artifactId>playwright</artifactId>
             <version>1.50.0</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -122,13 +134,10 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.22.2</version>
                     <configuration>
-                        <testFailureIgnore>true</testFailureIgnore> <!-- или false в зависимости от требований -->
+                        <testFailureIgnore>true</testFailureIgnore>
                         <argLine>
                             -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
                         </argLine>
-                        <suiteXmlFiles>
-                            <suiteXmlFile>${test.resource.dir}${file.separator}${suiteXmlFile}.xml</suiteXmlFile>
-                        </suiteXmlFiles>
                         <systemPropertyVariables>
                             <uploads.dir>${uploads.dir}</uploads.dir>
                         </systemPropertyVariables>
