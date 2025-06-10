@@ -42,6 +42,6 @@ build/
 /.idea/
 /.allure/
 /logs/
-videos
+/videos
 
 cucumber-reports/html/report.html
