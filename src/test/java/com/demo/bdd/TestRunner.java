@@ -7,7 +7,7 @@ import org.testng.annotations.DataProvider;
 @CucumberOptions(
         features = "src/test/resources/features",
         glue = {"com.demo.bdd"},
-        plugin = {"html:cucumber-reports/html/report.html",
+        plugin = {"pretty", "html:cucumber-reports/html/report.html",
                 "com.demo.bdd.StepsLogger"}
 )
 public class TestRunner extends AbstractTestNGCucumberTests {

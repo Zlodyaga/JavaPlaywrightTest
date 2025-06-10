@@ -16,5 +16,6 @@ public class GoogleStepDefinitions extends DefaultLogger {
     @When("Open google")
     public void openGoogle() {
         PlaywrightConfig.getPage().navigate("https://www.google.com/");
+        Assert.assertTrue("Should be true", false);
     }
 }
