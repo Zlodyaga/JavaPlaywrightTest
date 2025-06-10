@@ -15,12 +15,11 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <testng>7.10.2</testng>
-        <cucumber.version>7.14.0</cucumber.version>
+        <cucumber.version>7.23.0</cucumber.version>
         <junit.platform.version>1.9.3</junit.platform.version>
-        <junit.version>5.11.3</junit.version>
         <playwright.version>1.52.0</playwright.version>
-        <logback>1.5.12</logback>
-        <allure.version>2.29.0</allure.version>
+        <logback>1.5.13</logback>
+        <allure.version>2.29.1</allure.version>
         <aspectj.version>1.9.22.1</aspectj.version>
         <test.resource.dir>src${file.separator}test${file.separator}resources</test.resource.dir>
         <uploads.dir>${test.resource.dir}${file.separator}uploads${file.separator}</uploads.dir>
@@ -43,14 +42,16 @@
 
         <dependency>
             <groupId>io.qameta.allure</groupId>
-            <artifactId>allure-testng</artifactId>
+            <artifactId>allure-bom</artifactId>
             <version>${allure.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
         </dependency>
 
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback}</version>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
         </dependency>
 
         <dependency>
@@ -74,29 +75,17 @@
             <version>2.17.0</version>
         </dependency>
 
-
+        <!-- Logs -->
         <dependency>
-            <groupId>io.qameta.allure</groupId>
-            <artifactId>allure-junit5</artifactId>
-            <version>${allure.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.17</version>
         </dependency>
 
         <!-- Cucumber -->
@@ -133,7 +122,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.2</version>
+                    <version>3.5.3</version>
                     <configuration>
                         <testFailureIgnore>true</testFailureIgnore>
                         <argLine>
@@ -143,12 +132,6 @@
                             <uploads.dir>${uploads.dir}</uploads.dir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
-                        <properties>
-                            <property>
-                                <name>listener</name>
-                                <value>io.qameta.allure.junit5.AllureJunit5</value>
-                            </property>
-                        </properties>
                         <systemProperties>
                             <property>
                                 <name>allure.results.directory</name>
@@ -156,6 +139,13 @@
                             </property>
                         </systemProperties>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.aspectj</groupId>
+                            <artifactId>aspectjweaver</artifactId>
+                            <version>${aspectj.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
 
 
@@ -168,7 +158,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.14.0</version>
                     <configuration>
                         <source>17</source>
                         <target>17</target>
@@ -179,7 +169,7 @@
                 <plugin>
                     <groupId>io.qameta.allure</groupId>
                     <artifactId>allure-maven</artifactId>
-                    <version>2.14.0</version>
+                    <version>2.15.2</version>
                     <executions>
                         <execution>
                             <id>allure-report</id>

@@ -10,22 +10,25 @@ public class LoginPage extends PageTools {
         super(page);
     }
 
-    private final String emailField = "//input[@id='username']";
-    private final String passwordField = "//input[@id='password']";
-    private final String loginButton = "//button[span[text()='Log in']]";
+    private final String inputFieldById = "//input[normalize-space(@id)=\"%s\"]";
+    private final String loginButton = "//button[span[normalize-space(text())=\"%s\"]]";
 
     @Step("Type email")
     public void typeEmail(String value){
-        type(value,emailField);
+        typeIntoFieldName(value, "username");
     }
 
     @Step("Type password")
     public void typePassword(String value){
-        type(value, passwordField);
+        typeIntoFieldName(value, "password");
     }
 
     @Step("Click Log in button")
     public void clickLogInButton(){
-        click(loginButton);
+        click(loginButton, "Log in");
+    }
+
+    private void typeIntoFieldName(String value, String fieldName) {
+        type(value, inputFieldById, fieldName);
     }
 }

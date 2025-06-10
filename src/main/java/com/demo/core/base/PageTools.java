@@ -166,11 +166,6 @@ public class PageTools extends AllureLogger {
         return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isChecked, args);
     }
 
-//    protected boolean isElementExist{
-//        return isCondition()
-//        return !BaseTest.driver.findElements(locator).isEmpty();
-//    }
-
     /**
      * Getters
      */
