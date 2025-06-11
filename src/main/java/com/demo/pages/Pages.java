@@ -2,13 +2,15 @@ package com.demo.pages;
 
 import com.demo.core.allure.AllureLogger;
 import com.demo.core.config.PlaywrightConfig;
-import com.microsoft.playwright.Page;
+import com.demo.pages.Ithillel.IthillelPages;
 
 public class Pages extends AllureLogger {
     /**
      * Pages
      */
     private static LoginPage loginPage;
+    private static IthillelPages ithillelPages;
+
     /**
      * This function return an instance of `NavigationPage`
      */
@@ -17,6 +19,13 @@ public class Pages extends AllureLogger {
             loginPage = new LoginPage(PlaywrightConfig.getPage());
         }
         return loginPage;
+    }
+
+    public static IthillelPages ithillel() {
+        if (ithillelPages == null) {
+            ithillelPages = new IthillelPages();
+        }
+        return ithillelPages;
     }
 
 
