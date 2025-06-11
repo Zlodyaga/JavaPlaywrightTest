@@ -43,6 +43,6 @@ build/
 /.allure/
 /logs/
 /videos
-/Files
+/files
 
 cucumber-reports/html/report.html
