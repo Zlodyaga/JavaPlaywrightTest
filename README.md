@@ -10,21 +10,11 @@ Download project from git.
     # Run all tests:
     - mvn clean test
 
-    # Run a single test class.
-    - mvn clean -Dtest=YourClassName test
-
-     # Run a single test package.
-    - mvn clean -Dtest=yourPackage.*Test test
-
-    # Run different browser.
-    - mvn clean -Dbrowser=chrome test
-    - mvn clean -Dbrowser=firefox test
-
-    # Headless mode
-    - mvn -Dheadless=true test
+    # Run a single test case.
+    - mvn clean test -Dcucumber.filter.tags=@TestID
+    
+    # Run tests in a specific number of threads
+    - mvn clean test -Dcucumber.filter.tags=@TestTag -Ddataproviderthreadcount=NumberOfThreads
 
     Run allure report:
     - allure serve allure-results
-
-Example:
-    - mvn clean -Dheadless=true -Dbrowser=chrome -Dtest=com.demo.tests.*Test test

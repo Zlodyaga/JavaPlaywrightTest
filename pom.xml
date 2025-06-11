@@ -153,6 +153,12 @@
                                 <value>${project.build.directory}/../allure-results</value>
                             </property>
                         </systemProperties>
+                        <properties>
+                            <property>
+                                <name>dataproviderthreadcount</name>
+                                <value>4</value>
+                            </property>
+                        </properties>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -162,7 +168,6 @@
                         </dependency>
                     </dependencies>
                 </plugin>
-
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
