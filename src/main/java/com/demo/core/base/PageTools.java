@@ -1,6 +1,7 @@
 package com.demo.core.base;
 
 import com.demo.core.allure.AllureLogger;
+import com.demo.utils.Constants;
 import com.demo.utils.LocatorParser;
 import com.demo.utils.PlaywrightTools;
 import com.microsoft.playwright.*;
@@ -151,19 +152,30 @@ public class PageTools extends AllureLogger {
      * Is condition
      */
     protected boolean isElementVisible(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isVisible, args);
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isVisible);
     }
 
     protected boolean isElementClickable(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isEnabled, args);
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isEnabled);
     }
 
     protected boolean isElementDisabled(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isDisabled, args);
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isDisabled);
     }
 
     protected boolean isElementChecked(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, Locator::isChecked, args);
+        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isChecked);
+    }
+
+    protected boolean isElementVisibleCheckEverySecond(String selector, long seconds, Object... args) {
+        Locator parsedLocator = byLocator(selector, args);
+        logInfo(getPreviousMethodNameAsText() + ", element --> " + parsedLocator);
+            for (int i = 0; i < seconds; i++) {
+                if(parsedLocator.isVisible())
+                    return true;
+                PlaywrightTools.sleep(Constants.NANO_TIMEOUT);
+            }
+        return false;
     }
 
     /**
@@ -243,7 +255,7 @@ public class PageTools extends AllureLogger {
     Private methods
      */
 
-    private boolean checkLocatorState(String methodName, String selector, Function<Locator, Boolean> stateCheck, Object... args) {
+    private boolean checkLocatorState(String methodName, String selector, Object[] args, Function<Locator, Boolean> stateCheck) {
         Locator parsedLocator = byLocator(selector, args);
         logInfo(methodName + ", element --> " + parsedLocator);
         return stateCheck.apply(parsedLocator);
