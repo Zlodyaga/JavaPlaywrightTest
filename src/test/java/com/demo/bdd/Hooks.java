@@ -3,6 +3,7 @@ package com.demo.bdd;
 import com.demo.core.config.PlaywrightConfig;
 import com.demo.core.logger.DefaultLogger;
 import com.demo.utils.Constants;
+import com.demo.utils.PlaywrightTools;
 import com.microsoft.playwright.Page;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -19,8 +20,7 @@ public class Hooks extends DefaultLogger {
         configLog(this.getClass().getSimpleName());
         logInfo("Opening page: " + Constants.URL);
 
-        page = PlaywrightConfig.getPage();
-        page.navigate(Constants.URL);
+        PlaywrightTools.openUrl(Constants.URL);
     }
 
     @After

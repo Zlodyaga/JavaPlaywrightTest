@@ -1,8 +1,7 @@
-package com.demo.pages;
+package com.demo.pages.testSite;
 
 import com.demo.core.base.PageTools;
 import com.microsoft.playwright.Page;
-import io.cucumber.java.en.When;
 import io.qameta.allure.Step;
 
 public class LoginPage extends PageTools {

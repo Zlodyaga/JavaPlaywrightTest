@@ -2,7 +2,7 @@ package com.demo.pages;
 
 import com.demo.core.allure.AllureLogger;
 import com.demo.core.config.PlaywrightConfig;
-import com.microsoft.playwright.Page;
+import com.demo.pages.testSite.LoginPage;
 
 public class Pages extends AllureLogger {
     /**
@@ -10,7 +10,7 @@ public class Pages extends AllureLogger {
      */
     private static LoginPage loginPage;
     /**
-     * This function return an instance of `NavigationPage`
+     * This function return an instance of `LoginPage`
      */
     public static LoginPage loginPage(){
         if(loginPage == null) {
@@ -18,6 +18,4 @@ public class Pages extends AllureLogger {
         }
         return loginPage;
     }
-
-
 }

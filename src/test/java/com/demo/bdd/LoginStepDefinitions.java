@@ -7,11 +7,11 @@ import com.demo.utils.PlaywrightTools;
 import io.cucumber.java.en.When;
 import org.junit.Assert;
 
-public class InsureStepDefinitions extends AllureLogger {
+public class LoginStepDefinitions extends AllureLogger {
 
     @When("Open login page")
     public void openLoginPage() {
-        PlaywrightTools.openUrl(Constants.URL_LOGIN);
+        PlaywrightTools.openUrl(Constants.URL);
     }
 
     @When("Type email {string}")
