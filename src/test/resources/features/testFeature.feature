@@ -7,3 +7,4 @@ Feature: Test
     #Step 1
     When Open login page
     When Test step
+    When Fail test
