@@ -1,6 +1,7 @@
 package com.demo.utils;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.text.RandomStringGenerator;
 
 import java.text.DecimalFormat;
 import java.util.Random;
@@ -11,20 +12,22 @@ public class Generator {
         return new Random().nextInt((to - from) + 1) + from;
     }
 
-    public static String getRandomStringNumber() {
-        return RandomStringUtils.randomNumeric(10);
-    }
-
     public static String genString(int length) {
-        return RandomStringUtils.randomAlphabetic(length);
+        return new RandomStringGenerator.Builder()
+                .withinRange('a', 'z')
+                .build()
+                .generate(length);
     }
 
     public static String getRandomStringNumber(int length) {
-        return RandomStringUtils.randomNumeric(length);
+        return new RandomStringGenerator.Builder()
+                .withinRange('0', '9')
+                .build()
+                .generate(length);
     }
 
     public static String genAccountNumber() {
-        return genInt(1, 9) + RandomStringUtils.randomNumeric(11);
+        return genInt(1, 9) + getRandomStringNumber(11);
     }
 
     public static String genMobilePhone(int length) {
@@ -32,7 +35,7 @@ public class Generator {
     }
 
     public static String genEmail() {
-        return "testemail+" + getRandomStringNumber(7) + "@mail.com";
+        return "testemail+" + getRandomStringNumber(7) + "@gmail.com";
     }
 
     public static float genFloat(double from, double to, int precision) {

@@ -8,6 +8,9 @@ import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import static com.demo.core.logger.DefaultLogger.logStaticError;
+
+
 public class DateTime {
 
     public static String getLocalDateTimeByPattern(String pattern) {
@@ -155,7 +158,7 @@ public class DateTime {
             return simpleDateFormat.format(calendar.getTime());
         }
         catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Error... Got mistaken getting differance ", e);
             return startDate;
         }
     }
@@ -170,7 +173,7 @@ public class DateTime {
             return simpleDateFormat.format(calendar.getTime());
         }
         catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse date '{}'. Returning original value. Days to add: {}", e, startDate, days);
             return startDate;
         }
     }
@@ -198,7 +201,7 @@ public class DateTime {
                 ++days;
             }
         } catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse input dates. From: '{}', To: '{}', IncludeToDate: {}", e, from, to, includeToDate);
         }
         return days;
     }
@@ -211,8 +214,7 @@ public class DateTime {
 
             return simpleDateFormat.format(parsedDate);
         } catch (ParseException e) {
-            e.printStackTrace();
-
+            logStaticError("Failed to reformat date. Input: '{}', From pattern: '{}', To pattern: '{}'", e, date, currentPattern, newPattern);
             return "";
         }
     }
@@ -228,15 +230,14 @@ public class DateTime {
 
             return simpleDateFormat.format(cal.getTime());
         } catch (ParseException e) {
-            e.printStackTrace();
-
+            logStaticError("Failed to reformat date with offset. Input: '{}', From pattern: '{}', To pattern: '{}', Days to add: {}", e, date, currentPattern, newPattern, days);
             return "";
         }
     }
 
     public static String getLocalDateWithFormatPlusDays(String date, String currentPattern, String newPattern, int days) {
-            LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern(currentPattern));
-            return localDate.plusDays(days).format(DateTimeFormatter.ofPattern(newPattern));
+        LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern(currentPattern));
+        return localDate.plusDays(days).format(DateTimeFormatter.ofPattern(newPattern));
     }
 
     public static String getLocalDateWithFormatMinusDays(String date, String currentPattern, String newPattern, int days) {
@@ -259,7 +260,7 @@ public class DateTime {
             calendar.add(Calendar.MONTH, month);
             calendar.add(Calendar.DAY_OF_MONTH, days);
         } catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse input date '{}'. Months to add: {}, Days to add: {}", e, date, month, days);
         }
         return simpleDateFormat.format(calendar.getTime());
     }
@@ -277,7 +278,7 @@ public class DateTime {
             cal.setTime(date);
             return simpleDateFormat.format(cal.getTime());
         } catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse month name '{}'", e, month);
             return "";
         }
     }
@@ -290,7 +291,7 @@ public class DateTime {
             cal.setTime(date);
             return simpleDateFormat.format(cal.getTime());
         } catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse full year '{}'", e, year);
             return "";
         }
     }
@@ -331,7 +332,7 @@ public class DateTime {
             calendar.setTime(simpleDateFormat.parse(date));
             calendar.add(Calendar.MONTH, -month);
         } catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse date '{}'. Months to subtract: {}", e, date, month);
         }
         return simpleDateFormat.format(calendar.getTime());
     }
@@ -344,7 +345,7 @@ public class DateTime {
             calendar.setTime(simpleDateFormat.parse(date));
             calendar.add(Calendar.MONTH, month);
         } catch (ParseException e) {
-            e.printStackTrace();
+            logStaticError("Failed to parse date '{}'. Months to add: {}", e, date, month);
         }
         return simpleDateFormat.format(calendar.getTime());
     }

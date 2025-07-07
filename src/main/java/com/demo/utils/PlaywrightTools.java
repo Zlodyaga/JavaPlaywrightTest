@@ -70,6 +70,16 @@ public class PlaywrightTools {
         LOG.info("Switching to default content...");
     }
 
+    @Step("Switching to first tab...")
+    public static void switchToFirstTab() {
+        LOG.info("Switching to first tab...");
+        List<Page> tabs = getTabsList();
+        if(tabs.size() != 1) {
+            Page lastPage = tabs.get(0);
+            PlaywrightConfig.setPage(lastPage);
+        }
+    }
+
     @Step("Switching to last tab...")
     public static void switchToLastTab() {
         LOG.info("Switching to last tab...");

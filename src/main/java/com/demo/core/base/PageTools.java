@@ -1,6 +1,7 @@
 package com.demo.core.base;
 
-import com.demo.core.allure.AllureLogger;
+import com.demo.core.logger.DefaultLogger;
+import com.demo.core.config.PlaywrightConfig;
 import com.demo.utils.Constants;
 import com.demo.utils.LocatorParser;
 import com.demo.utils.PlaywrightTools;
@@ -14,13 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 
-public class PageTools extends AllureLogger {
-
-    private final Page page;
-
-    public PageTools(Page page) {
-        this.page = page;
-    }
+public class PageTools extends DefaultLogger {
 
     private static String getPreviousMethodNameAsText() {
         String methodName = Thread.currentThread().getStackTrace()[3].getMethodName();
@@ -36,7 +31,7 @@ public class PageTools extends AllureLogger {
     }
 
     private Locator byLocator(String by, Object... args) {
-        return LocatorParser.parseLocator(page, by, args);
+        return LocatorParser.parseLocator(PlaywrightConfig.getPage(), by, args);
     }
 
     /**
@@ -84,19 +79,24 @@ public class PageTools extends AllureLogger {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::click);
     }
 
+    protected void doubleClick(String selector, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::dblclick);
+    }
+
     protected void jsClick(String selector, Object... args) {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
             locator.evaluate("el => el.click()");
         });
     }
 
-    protected void type(String text, String selector, Object... args) {
+    @Deprecated
+    protected void typeDeprecated(String text, String selector, Object... args) {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
             locator.type(text);
         });
     }
 
-    protected void typeFill(String text, String selector, Object... args) {
+    protected void type(String text, String selector, Object... args) {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
             locator.fill(text);
         });
@@ -119,8 +119,54 @@ public class PageTools extends AllureLogger {
     }
 
     protected void clickEnterButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "Enter", args);
+    }
+
+    protected void clickEscapeButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "Escape", args);
+    }
+
+    protected void clickTabButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "Tab", args);
+    }
+
+    protected void clickBackspaceButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "Backspace", args);
+    }
+
+    protected void clickDeleteButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "Delete", args);
+    }
+
+    protected void clickArrowLeftButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "ArrowLeft", args);
+    }
+
+    protected void clickArrowUpButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "ArrowUp", args);
+    }
+
+    protected void clickArrowRightButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "ArrowRight", args);
+    }
+
+    protected void clickArrowDownButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "ArrowDown", args);
+    }
+
+    protected void clickSpaceButton(String selector, Object... args) {
+        clickButtonOnKeyboard(selector, "Space", args);
+    }
+
+    private void clickButtonOnKeyboard(String selector, String keyButton, Object... args) {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
-            locator.press("Enter");
+            locator.press(keyButton);
+        });
+    }
+
+    protected void selectOption(String selector, String option, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+            locator.selectOption(option);
         });
     }
 
@@ -132,7 +178,15 @@ public class PageTools extends AllureLogger {
 
     protected void waitForElementInvisibility(String selector, Object... args) {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
-            locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+            try {
+                locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+            } catch (PlaywrightException e) {
+                if (e.getMessage().contains("Object doesn't exist")) {
+                    logInfo("Element already removed: " + selector);
+                } else {
+                    throw e;
+                }
+            }
         });
     }
 
@@ -140,11 +194,11 @@ public class PageTools extends AllureLogger {
         performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
             locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
         });
-        for(int i = 0; i < 25; i++) {
-            if(isElementClickable(selector, args)) {
+        for (int i = 0; i < 25; i++) {
+            if (isElementClickable(selector, args)) {
                 return;
             }
-            PlaywrightTools.sleep(1);
+            PlaywrightTools.sleep(Constants.NANO_TIMEOUT);
         }
     }
 
@@ -170,19 +224,44 @@ public class PageTools extends AllureLogger {
     protected boolean isElementVisibleCheckEverySecond(String selector, long seconds, Object... args) {
         Locator parsedLocator = byLocator(selector, args);
         logInfo(getPreviousMethodNameAsText() + ", element --> " + parsedLocator);
-            for (int i = 0; i < seconds; i++) {
-                if(parsedLocator.isVisible())
-                    return true;
-                PlaywrightTools.sleep(Constants.NANO_TIMEOUT);
+
+        try {
+        for (int i = 0; i < seconds; i++) {
+            if (parsedLocator.isVisible()) {
+                logInfo("Element is visible after " + i + " seconds");
+                return true;
             }
+            PlaywrightTools.sleep(Constants.NANO_TIMEOUT);
+        }
+        logInfo("Element is not visible after " + seconds + " seconds");
         return false;
+        } catch (PlaywrightException e) {
+            if (e.getMessage().contains("Object doesn't exist")) {
+                logInfo("Element already removed: " + selector);
+                return false;
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**
      * Getters
      */
     protected String getElementText(String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::inputValue);
+    }
+
+    protected String getElementInnerHTML(String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::innerHTML);
+    }
+
+    protected String getElementInnerText(String selector, Object... args) {
         return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::innerText);
+    }
+
+    protected String getElementTextContent(String selector, Object... args) {
+        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::textContent);
     }
 
     protected String getElementAttributeValue(String attr, String selector, Object... args) {
@@ -229,7 +308,7 @@ public class PageTools extends AllureLogger {
     protected void scrollToPlaceElementInCenter(String selector, Object... args) {
         Locator locator = byLocator(selector, args);
         logInfo(getPreviousMethodNameAsText() + ", element --> " + locator);
-        page.evaluate("el => el.scrollIntoView({block: 'center'})", locator);
+        PlaywrightConfig.getPage().evaluate("el => el.scrollIntoView({block: 'center'})", locator);
     }
 
     protected ElementHandle getWebElement(String selector, Object... args) {
@@ -243,22 +322,31 @@ public class PageTools extends AllureLogger {
     protected Path downloadFile(String selector, Object... args) {
         try {
             Locator locator = byLocator(selector, args);
-            Download download = page.waitForDownload(() -> locator.click());
+            Download download = PlaywrightConfig.getPage().waitForDownload(locator::click);
             return download.path();
         } catch (Exception e) {
-            e.printStackTrace();
+            logError("Failed to download file using selector '{}'", e, selector);
             return null;
         }
     }
 
     /**
-    Private methods
+     * Private methods
      */
 
     private boolean checkLocatorState(String methodName, String selector, Object[] args, Function<Locator, Boolean> stateCheck) {
         Locator parsedLocator = byLocator(selector, args);
         logInfo(methodName + ", element --> " + parsedLocator);
+        try {
         return stateCheck.apply(parsedLocator);
+        } catch (PlaywrightException e) {
+            if (e.getMessage().contains("Object doesn't exist")) {
+                logInfo("Element already removed: " + selector);
+                return false;
+            } else {
+                throw e;
+            }
+        }
     }
 
     private void performOnLocator(String methodName, String selector, Object[] args, Consumer<Locator> action) {

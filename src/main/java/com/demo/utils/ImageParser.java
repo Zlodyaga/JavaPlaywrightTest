@@ -5,8 +5,12 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Base64;
+
+import static com.demo.core.logger.DefaultLogger.logStaticError;
+
 
 public class ImageParser {
 
@@ -23,7 +27,7 @@ public class ImageParser {
             byte[] imageBytes = Base64.getDecoder().decode(base64Image);
             return ImageIO.read(new ByteArrayInputStream(imageBytes));
         } catch (IOException e) {
-            e.printStackTrace();
+            logStaticError("Failed to decode or read base64 image. Index: {}, Source length: {}", e, index, imageSource.length());
             return null;
         }
     }
@@ -32,7 +36,7 @@ public class ImageParser {
         try {
             ImageIO.write(img, "png", new File(imagePath));
         } catch (IOException e) {
-            e.printStackTrace();
+            logStaticError("Failed to write image to path '{}'", e, imagePath);
         }
     }
 
@@ -40,7 +44,7 @@ public class ImageParser {
         try {
             ImageIO.write(img, formatName, new File(imagePath));
         } catch (IOException e) {
-            e.printStackTrace();
+            logStaticError("Failed to write image to path '{}' with format '{}'", e, imagePath, formatName);
         }
     }
 
@@ -54,12 +58,10 @@ public class ImageParser {
 
     private static BufferedImage getBufferedImageFromUrl(String url) {
         try {
-            URL urlFromString = new URL(url);
-            System.out.println(urlFromString.getPath());
+            URL urlFromString = URI.create(url).toURL();
             return ImageIO.read(urlFromString);
         } catch (IOException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            logStaticError("Failed to read image from URL '{}'", e, url);
             return null;
         }
     }

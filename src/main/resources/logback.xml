@@ -25,4 +25,6 @@
         <appender-ref ref="Console"/>
         <appender-ref ref="SIFT"/>
     </root>
+
+    <logger name="io.qameta.allure.util.NamingUtils" level="OFF"/>
 </configuration>

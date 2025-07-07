@@ -7,6 +7,9 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 
+import static com.demo.core.logger.DefaultLogger.logStaticError;
+
+
 public class AllureTools {
     private static File newFile;
     private static InputStream inputStream;
@@ -37,13 +40,13 @@ public class AllureTools {
         try {
             inputStream = new FileInputStream(newFile);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logStaticError("Log file not found: '{}'", e, newFile != null ? newFile.getName() : "null");
         }
         try {
             newFile.delete();
             return IOUtils.toByteArray(inputStream);
         } catch (IOException e) {
-            e.printStackTrace();
+            logStaticError("Failed to read or delete log file: '{}'", e, newFile != null ? newFile.getName() : "null");
         }
 
         return null;

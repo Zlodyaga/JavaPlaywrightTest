@@ -34,7 +34,8 @@ public abstract class AbstractPerson {
 
     protected AbstractDocument driversLicense = new DriversLicense();
 
-    protected String password = "Password1!";
+    protected String passwordEmail = "Password1!";
+    protected String appPassword;
 
     protected AbstractPerson setDefaultData() {
         return this;
@@ -50,6 +51,21 @@ public abstract class AbstractPerson {
 
     public String getFirstNameLastName() {
         return String.format("%s %s", firstName, lastName);
+    }
+
+    public String getEmailFormatted() {
+        int atIndex = email.indexOf('@');
+        if (atIndex == -1) return email; // not a valid email
+
+        String localPart = email.substring(0, atIndex);
+        String domainPart = email.substring(atIndex);
+
+        int plusIndex = localPart.indexOf('+');
+        if (plusIndex != -1) {
+            localPart = localPart.substring(0, plusIndex);
+        }
+
+        return localPart + domainPart;
     }
 
     public String getMobileNumberFormatted() {

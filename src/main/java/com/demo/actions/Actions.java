@@ -1,5 +1,7 @@
 package com.demo.actions;
 
+import com.demo.core.config.PlaywrightConfig;
+
 public class Actions {
     /**
      * Page actions
@@ -19,5 +21,20 @@ public class Actions {
             mainActions = new MainActions();
         }
         return mainActions;
+    }
+
+    /**
+     * These functions return an instance of `APIActions`
+     */
+    public synchronized static APIActions apiActions(boolean isContextFromBrowser) {
+        return new APIActions(
+                isContextFromBrowser
+                        ? PlaywrightConfig.getPage().request()
+                        : PlaywrightConfig.getAPIRequestContextNew().newContext()
+        );
+    }
+
+    public static APIActions apiActions() {
+        return apiActions(true);
     }
 }

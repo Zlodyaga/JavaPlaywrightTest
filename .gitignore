@@ -44,5 +44,3 @@ build/
 /logs/
 /videos
 /files
-
-cucumber-reports/html/report.html

@@ -1,13 +1,13 @@
 package com.demo.core.base;
 
-import com.demo.core.allure.AllureLogger;
+import com.demo.core.logger.DefaultLogger;
 import com.microsoft.playwright.Page;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
 
-public class BaseTest extends AllureLogger {
+public class BaseTest extends DefaultLogger {
 
     protected Page page;
 
