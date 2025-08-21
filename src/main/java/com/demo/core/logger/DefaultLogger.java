@@ -42,7 +42,7 @@ public class DefaultLogger {
     }
 
     public static void logStaticInfo(String message, Object... args) {
-        staticLogger.info(message, args);
+        staticLogger.info(Thread.currentThread().getName() + " | " + message, args);
     }
 
     public void logWarn(String message, Object... args) {
@@ -60,7 +60,7 @@ public class DefaultLogger {
     }
 
     public static void logStaticError(String message, Object... args) {
-        staticLogger.error(message, args);
+        staticLogger.error(Thread.currentThread().getName() + " | " + message, args);
     }
 
     public static void logStaticError(String message, Throwable t, Object... args) {

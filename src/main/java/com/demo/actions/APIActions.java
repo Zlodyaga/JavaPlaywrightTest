@@ -1,6 +1,7 @@
 package com.demo.actions;
 
 import com.demo.core.logger.DefaultLogger;
+import com.demo.data.SiteContext;
 import com.demo.utils.Constants;
 import com.demo.utils.ParseJSON;
 import com.microsoft.playwright.APIRequestContext;
@@ -51,8 +52,8 @@ public class APIActions extends DefaultLogger {
         return response;
     }
 
-    private String getUrlForResponse(String url) {
-        String urlForResponse = Constants.BASE_URL + url;
+    private String getUrlForResponse(String url, SiteContext siteContext) {
+        String urlForResponse = Constants.BASE_URL_MAP.get(siteContext) + url;
         logInfo("URL for response: " + urlForResponse);
         return urlForResponse;
     }

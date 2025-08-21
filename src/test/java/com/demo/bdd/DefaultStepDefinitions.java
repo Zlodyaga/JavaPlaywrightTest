@@ -1,5 +1,6 @@
 package com.demo.bdd;
 
+import com.demo.core.config.PlaywrightConfig;
 import com.demo.core.logger.DefaultLogger;
 import com.demo.utils.Constants;
 import com.demo.utils.PlaywrightTools;
@@ -19,7 +20,9 @@ public class DefaultStepDefinitions extends DefaultLogger {
 
     @When("Open duplicate of current tab in other tab and switch on it")
     public void openNewTabDuplicateOfCurrent() {
-        PlaywrightTools.openUrlInNewWindow(PlaywrightTools.getCurrentUrl());
+        String currentUrl = PlaywrightTools.getCurrentUrl();
+        logInfo("Current url: '%s'", currentUrl);
+        PlaywrightTools.openUrlInNewWindow(currentUrl);
         PlaywrightTools.switchToLastTab();
     }
 
@@ -30,7 +33,7 @@ public class DefaultStepDefinitions extends DefaultLogger {
 
     @When("Open new tab")
     public void openNewTab() {
-        PlaywrightTools.openUrlInNewWindow(Constants.BASE_URL);
+        PlaywrightTools.openUrlInNewWindow("google.com");
     }
 
     @When("Refresh page after {int} seconds")
@@ -54,5 +57,15 @@ public class DefaultStepDefinitions extends DefaultLogger {
             logInfo("Using default timeout of " + Constants.SMALL_TIMEOUT + " seconds.");
             PlaywrightTools.sleep(Constants.SMALL_TIMEOUT);
         }
+    }
+
+    @When("Pause actions")
+    public void pausePagePlaywrightBrowser() {
+        PlaywrightConfig.getPage().pause();
+    }
+
+    @When("Clear cookies")
+    public void clearCookies() {
+        PlaywrightTools.clearCookies();
     }
 }

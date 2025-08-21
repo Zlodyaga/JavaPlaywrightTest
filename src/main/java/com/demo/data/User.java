@@ -1,17 +1,19 @@
 package com.demo.data;
 
-import com.demo.data.abstractClasses.AbstractPerson;
-import com.demo.utils.MailReader;
+import com.demo.data.abstracts.AbstractMailReader;
+import com.demo.data.abstracts.AbstractPerson;
+import com.demo.utils.Constants;
+import com.demo.utils.mail.read.MailReaderImap;
+import com.demo.utils.mail.read.MailReaderMailinator;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 @Setter
 @Getter
 public class User extends AbstractPerson {
-    public MailReader mailReader;
+    public AbstractMailReader mailReader;
     public String password;
 
     public User() {
@@ -19,16 +21,19 @@ public class User extends AbstractPerson {
 
     public User(String email, String password) {
         this.email = email;
-        this.password = new String(Base64.getDecoder().decode(password), StandardCharsets.UTF_8);
+        this.password = new String(Constants.DECODER.decode(password), StandardCharsets.UTF_8);
     }
 
-    public User(String email, String password, String appPassword) {
+    public User(String email, String password, String appPassword, Boolean isMailinatorOff) {
         this(email, password);
-        this.appPassword = new String(Base64.getDecoder().decode(appPassword), StandardCharsets.UTF_8);
-        mailReader = new MailReader(email, this.appPassword);
+        this.appPassword = new String(Constants.DECODER.decode(appPassword), StandardCharsets.UTF_8);
+        if (isMailinatorOff)
+            mailReader = new MailReaderImap(email, this.appPassword);
+        else
+            mailReader = new MailReaderMailinator(email);
     }
 
-    public void setPasswordBase64(String password) {
-        this.password = new String(Base64.getDecoder().decode(password), StandardCharsets.UTF_8);
+    public void setPasswordDecoded(String password) {
+        this.password = new String(Constants.DECODER.decode(password), StandardCharsets.UTF_8);
     }
 }

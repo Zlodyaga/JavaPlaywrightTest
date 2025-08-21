@@ -1,4 +1,4 @@
-package com.demo.data.abstractClasses;
+package com.demo.data.abstracts;
 
 import com.demo.utils.DateTime;
 import com.demo.utils.Generator;

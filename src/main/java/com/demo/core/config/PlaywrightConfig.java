@@ -1,5 +1,6 @@
 package com.demo.core.config;
 
+import com.demo.core.logger.DefaultLogger;
 import com.demo.utils.Constants;
 import com.demo.utils.PlaywrightTools;
 import com.microsoft.playwright.*;
@@ -7,13 +8,12 @@ import com.microsoft.playwright.BrowserType.LaunchOptions;
 import com.microsoft.playwright.options.RecordVideoSize;
 import com.microsoft.playwright.options.ViewportSize;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class PlaywrightConfig {
+public class PlaywrightConfig extends DefaultLogger {
+    private static final ThreadLocal<Playwright> playwrightThreadLocal = new ThreadLocal<>();
     private static final ThreadLocal<Browser> browserThreadLocal = new ThreadLocal<>();
     private static final ThreadLocal<BrowserContext> contextThreadLocal = new ThreadLocal<>();
     private static final ThreadLocal<Page> pageThreadLocal = new ThreadLocal<>();
@@ -24,6 +24,7 @@ public class PlaywrightConfig {
 
 
     public static void createBrowserConfig() {
+        playwrightThreadLocal.set(Playwright.create());
         getBrowser();
         getContext();
         getPage();
@@ -54,9 +55,9 @@ public class PlaywrightConfig {
             browserThreadLocal.set(switch (browserType.toLowerCase()) {
                 case "chrome" -> {
                     options.setChannel("chrome");
-                    yield PlaywrightHolder.get().chromium().launch(options);
+                    yield playwrightThreadLocal.get().chromium().launch(options);
                 }
-                case "firefox" -> PlaywrightHolder.get().firefox().launch(options);
+                case "firefox" -> playwrightThreadLocal.get().firefox().launch(options);
                 default -> throw new IllegalArgumentException("Unsupported browser: " + browserType);
             });
         }
@@ -81,7 +82,7 @@ public class PlaywrightConfig {
     }
 
     public synchronized static APIRequest getAPIRequestContextNew() {
-        Playwright playwright = PlaywrightHolder.get();
+        Playwright playwright = playwrightThreadLocal.get();
         if (playwright == null) {
             throw new IllegalStateException("Playwright not initialized. Call Playwright.create() first.");
         }
@@ -110,6 +111,7 @@ public class PlaywrightConfig {
             apiRequestThreadLocal.remove();
             pageThreadLocal.remove();
             scenarioNameThreadLocal.remove();
+            playwrightThreadLocal.remove();
         }
     }
 

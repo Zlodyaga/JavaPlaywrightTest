@@ -1,5 +1,6 @@
 package com.demo.utils;
 
+import com.microsoft.playwright.Frame;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import java.util.MissingFormatArgumentException;
@@ -13,6 +14,14 @@ public class LocatorParser {
         }
 
         return page.locator(formatted);
+    }
+
+    public static Locator parseLocator(Frame frame, String pattern, Object... args) {
+        String formatted = formatPattern(pattern, args);
+        if (formatted.startsWith("/") || formatted.startsWith("//")) {
+            return frame.locator("xpath=" + formatted);
+        }
+        return frame.locator(formatted);
     }
 
     private static String formatPattern(String pattern, Object... args) {

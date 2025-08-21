@@ -2,11 +2,13 @@ package com.demo.core.base;
 
 import com.demo.core.logger.DefaultLogger;
 import com.demo.core.config.PlaywrightConfig;
+import com.demo.data.enums.ElementSelection;
 import com.demo.utils.Constants;
 import com.demo.utils.LocatorParser;
 import com.demo.utils.PlaywrightTools;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.WaitForSelectorState;
+import org.testng.Assert;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,11 +16,13 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.demo.core.config.PlaywrightConfig.getPage;
+
 
 public class PageTools extends DefaultLogger {
 
-    private static String getPreviousMethodNameAsText() {
-        String methodName = Thread.currentThread().getStackTrace()[3].getMethodName();
+    private static String getPreviousMethodNameAsText(int depth) {
+        String methodName = Thread.currentThread().getStackTrace()[depth].getMethodName();
         String replacedMethodName = methodName.replaceAll(
                 String.format("%s|%s|%s",
                         "(?<=[A-Z])(?=[A-Z][a-z])",
@@ -30,15 +34,27 @@ public class PageTools extends DefaultLogger {
         return replacedMethodName.substring(0, 1).toUpperCase() + replacedMethodName.substring(1).toLowerCase();
     }
 
-    private Locator byLocator(String by, Object... args) {
-        return LocatorParser.parseLocator(PlaywrightConfig.getPage(), by, args);
+    private Locator byLocator(String selector, ElementSelection selection, Object... args) {
+        Locator base = PlaywrightTools.isInFrame()
+                ? LocatorParser.parseLocator(PlaywrightTools.getCurrentFrame(), selector, args)
+                : LocatorParser.parseLocator(PlaywrightConfig.getPage(), selector, args);
+
+        if (selection == ElementSelection.FIRST) {
+            return base.first();
+        }
+
+        return base;
+    }
+
+    private Locator byLocator(String selector, Object... args) {
+        return byLocator(selector, ElementSelection.DEFAULT, args);
     }
 
     /**
      * Should be
      */
     protected void shouldMatchText(String pattern, String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             String actualText = locator.innerText();
             if (!actualText.matches(pattern)) {
                 throw new AssertionError("Text does not match pattern.\nExpected regex: " + pattern + "\nActual text: " + actualText);
@@ -47,7 +63,7 @@ public class PageTools extends DefaultLogger {
     }
 
     protected void shouldNotBeEmpty(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             String actualText = locator.innerText().trim();
             if (actualText.isEmpty()) {
                 throw new AssertionError("Element text is empty, but should not be.");
@@ -56,7 +72,7 @@ public class PageTools extends DefaultLogger {
     }
 
     protected void shouldNotHaveClass(String className, String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             if (locator.getAttribute("class") != null && locator.getAttribute("class").contains(className)) {
                 throw new AssertionError("Element has class '" + className + "' but should not.");
             }
@@ -64,7 +80,7 @@ public class PageTools extends DefaultLogger {
     }
 
     protected void shouldHaveClass(String className, String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             String classes = locator.getAttribute("class");
             if (classes == null || !classes.contains(className)) {
                 throw new AssertionError("Element does not have expected class '" + className + "'. Actual classes: " + classes);
@@ -75,47 +91,55 @@ public class PageTools extends DefaultLogger {
     /**
      * Main Actions
      */
+    private void clickInternal(String selector, ElementSelection selection, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(3), selector, selection, args, Locator::click);
+    }
+
+    protected void click(String selector, ElementSelection selection, Object... args) {
+        clickInternal(selector, selection, args);
+    }
+
     protected void click(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::click);
+        clickInternal(selector, ElementSelection.DEFAULT, args);
     }
 
     protected void doubleClick(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::dblclick);
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, Locator::dblclick);
     }
 
     protected void jsClick(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.evaluate("el => el.click()");
         });
     }
 
     @Deprecated
     protected void typeDeprecated(String text, String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.type(text);
         });
     }
 
     protected void type(String text, String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.fill(text);
         });
     }
 
     protected void wipeText(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.fill("");
         });
     }
 
     protected void uploadFile(String filePath, String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.setInputFiles(Paths.get(filePath));
         });
     }
 
     protected void mouseHover(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, Locator::hover);
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, Locator::hover);
     }
 
     protected void clickEnterButton(String selector, Object... args) {
@@ -159,30 +183,35 @@ public class PageTools extends DefaultLogger {
     }
 
     private void clickButtonOnKeyboard(String selector, String keyButton, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.press(keyButton);
         });
     }
 
     protected void selectOption(String selector, String option, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.selectOption(option);
         });
     }
 
     protected void waitForElementVisibility(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
         });
     }
 
     protected void waitForElementInvisibility(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        performOnLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             try {
-                locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+                Locator.WaitForOptions options = new Locator.WaitForOptions()
+                        .setState(WaitForSelectorState.HIDDEN)
+                        .setTimeout((double) Constants.TIMEOUT_BEFORE_FAIL * 1000);
+                locator.waitFor(options);
             } catch (PlaywrightException e) {
                 if (e.getMessage().contains("Object doesn't exist")) {
                     logInfo("Element already removed: " + selector);
+                } else if (e.getMessage().contains("Timeout")) {
+                    Assert.fail("Timeout reached: Element not hidden — " + selector);
                 } else {
                     throw e;
                 }
@@ -190,54 +219,102 @@ public class PageTools extends DefaultLogger {
         });
     }
 
-    protected void waitForElementClickable(String selector, Object... args) {
-        performOnLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
-            locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-        });
+    private void waitForElementClickableInternal(String selector, ElementSelection selection, Object... args) {
+        performOnLocator(getPreviousMethodNameAsText(3), selector, selection, args,
+                locator -> locator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE)));
+
         for (int i = 0; i < 25; i++) {
-            if (isElementClickable(selector, args)) {
+            Locator locator = byLocator(selector, selection, args);
+            if (locator.isVisible() && locator.isEnabled()) {
                 return;
             }
             PlaywrightTools.sleep(Constants.NANO_TIMEOUT);
         }
+        throw new RuntimeException("Element '" + selector + "' is not clickable after timeout.");
+    }
+
+    protected void waitForElementClickable(String selector, ElementSelection selection, Object... args) {
+        waitForElementClickableInternal(selector, selection, args);
+    }
+
+    protected void waitForElementClickable(String selector, Object... args) {
+        waitForElementClickableInternal(selector, ElementSelection.DEFAULT, args);
+    }
+
+    protected Frame waitForFrameAndReturn(String iframeId) {
+        ElementHandle iframeHandle = getPage().waitForSelector("iframe#" + iframeId);
+        Frame frame = iframeHandle.contentFrame();
+        frame.waitForSelector("body");
+        return frame;
     }
 
     /**
      * Is condition
      */
+
     protected boolean isElementVisible(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isVisible);
+        return isElementVisible(selector, true, args);
     }
 
     protected boolean isElementClickable(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isEnabled);
+        return isElementClickable(selector, true, args);
     }
 
     protected boolean isElementDisabled(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isDisabled);
+        return isElementDisabled(selector, true, args);
     }
 
     protected boolean isElementChecked(String selector, Object... args) {
-        return checkLocatorState(getPreviousMethodNameAsText(), selector, args, Locator::isChecked);
+        return isElementChecked(selector, true, args);
     }
 
-    protected boolean isElementVisibleCheckEverySecond(String selector, long seconds, Object... args) {
-        Locator parsedLocator = byLocator(selector, args);
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + parsedLocator);
+    private boolean isElementVisible(String selector, boolean isShowLogs, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(3), isShowLogs, selector, args, Locator::isVisible);
+    }
+
+    private boolean isElementClickable(String selector, boolean isShowLogs, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(3), isShowLogs, selector, args, Locator::isEnabled);
+    }
+
+    private boolean isElementDisabled(String selector, boolean isShowLogs, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(3), isShowLogs, selector, args, Locator::isDisabled);
+    }
+
+    private boolean isElementChecked(String selector, boolean isShowLogs, Object... args) {
+        return checkLocatorState(getPreviousMethodNameAsText(3), isShowLogs, selector, args, Locator::isChecked);
+    }
+
+    protected boolean isFirstElementVisibleCheck(String selector, long seconds, Object... args) {
+        return isElementVisibleCheckInternal(selector, seconds, ElementSelection.DEFAULT, args);
+    }
+
+    protected boolean isElementVisibleCheck(String selector, long seconds, Object... args) {
+        return isElementVisibleCheckInternal(selector, seconds, ElementSelection.FIRST, args);
+    }
+
+    private boolean isElementVisibleCheckInternal(String selector, long seconds, ElementSelection selection, Object... args) {
+        int periodNumber = 4;
+
+        Locator parsedLocator = byLocator(selector, selection, args);
+        logInfo(getPreviousMethodNameAsText(2) +
+                (selection == ElementSelection.FIRST ? ", first element --> " : ", element --> ") + parsedLocator);
 
         try {
-        for (int i = 0; i < seconds; i++) {
-            if (parsedLocator.isVisible()) {
-                logInfo("Element is visible after " + i + " seconds");
-                return true;
+            for (double i = 0; i < seconds * periodNumber; i++) {
+                if (parsedLocator.isVisible()) {
+                    logInfo((selection == ElementSelection.FIRST ? "First element" : "Element") +
+                            " is visible after " + String.format("%.2f", i / periodNumber) + " seconds");
+                    return true;
+                }
+                PlaywrightTools.sleep((double) Constants.NANO_TIMEOUT / periodNumber);
             }
-            PlaywrightTools.sleep(Constants.NANO_TIMEOUT);
-        }
-        logInfo("Element is not visible after " + seconds + " seconds");
-        return false;
+            logInfo((selection == ElementSelection.FIRST ? "First element" : "Element") +
+                    " is not visible after " + seconds + " seconds");
+            return false;
         } catch (PlaywrightException e) {
             if (e.getMessage().contains("Object doesn't exist")) {
-                logInfo("Element already removed: " + selector);
+                logInfo((selection == ElementSelection.FIRST ? "First element" : "Element") +
+                        " already removed: " + selector);
                 return false;
             } else {
                 throw e;
@@ -248,28 +325,34 @@ public class PageTools extends DefaultLogger {
     /**
      * Getters
      */
+    protected String getInnerHTMLFromFrame(String frameId, String selector) {
+        return getHtml(waitForFrameAndReturn(frameId)
+                .locator(selector)
+                .innerHTML());
+    }
+
     protected String getElementText(String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::inputValue);
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, Locator::inputValue);
     }
 
     protected String getElementInnerHTML(String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::innerHTML);
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, Locator::innerHTML);
     }
 
     protected String getElementInnerText(String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::innerText);
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, Locator::innerText);
     }
 
     protected String getElementTextContent(String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, Locator::textContent);
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, Locator::textContent);
     }
 
     protected String getElementAttributeValue(String attr, String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, locator -> locator.getAttribute(attr));
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, locator -> locator.getAttribute(attr));
     }
 
     protected String getHiddenElementAttributeValue(String attr, String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             if (!locator.isHidden()) {
                 throw new AssertionError("Element is not hidden");
             }
@@ -278,7 +361,7 @@ public class PageTools extends DefaultLogger {
     }
 
     protected String getDisabledElementAttributeValue(String attr, String selector, Object... args) {
-        return extractFromLocator(getPreviousMethodNameAsText(), selector, args, locator -> {
+        return extractFromLocator(getPreviousMethodNameAsText(2), selector, args, locator -> {
             if (!locator.isDisabled()) {
                 throw new AssertionError("Element is not disabled");
             }
@@ -288,26 +371,26 @@ public class PageTools extends DefaultLogger {
 
     protected List<String> getElementsText(String selector, Object... args) {
         Locator locator = byLocator(selector, args);
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + locator);
+        logInfo(getPreviousMethodNameAsText(2) + ", elements --> " + locator);
         return locator.allInnerTexts();
     }
 
     protected List<String> getElementsTextWithWait(int waitTimeout, String selector, Object... args) {
         Locator locator = byLocator(selector, args);
-        logInfo(getPreviousMethodNameAsText() + ", elements --> " + locator);
+        logInfo(getPreviousMethodNameAsText(2) + ", elements --> " + locator);
         PlaywrightTools.sleep(waitTimeout);
         return locator.allInnerTexts();
     }
 
     protected void scrollToElement(String selector, Object... args) {
         Locator locator = byLocator(selector, args);
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + locator);
+        logInfo(getPreviousMethodNameAsText(2) + ", element --> " + locator);
         locator.scrollIntoViewIfNeeded();
     }
 
     protected void scrollToPlaceElementInCenter(String selector, Object... args) {
         Locator locator = byLocator(selector, args);
-        logInfo(getPreviousMethodNameAsText() + ", element --> " + locator);
+        logInfo(getPreviousMethodNameAsText(2) + ", element --> " + locator);
         PlaywrightConfig.getPage().evaluate("el => el.scrollIntoView({block: 'center'})", locator);
     }
 
@@ -322,7 +405,7 @@ public class PageTools extends DefaultLogger {
     protected Path downloadFile(String selector, Object... args) {
         try {
             Locator locator = byLocator(selector, args);
-            Download download = PlaywrightConfig.getPage().waitForDownload(locator::click);
+            Download download = PlaywrightConfig.getPage().waitForDownload(() -> locator.click());
             return download.path();
         } catch (Exception e) {
             logError("Failed to download file using selector '{}'", e, selector);
@@ -334,11 +417,11 @@ public class PageTools extends DefaultLogger {
      * Private methods
      */
 
-    private boolean checkLocatorState(String methodName, String selector, Object[] args, Function<Locator, Boolean> stateCheck) {
+    private boolean checkLocatorState(String methodName, boolean isShowLogs, String selector, Object[] args, Function<Locator, Boolean> stateCheck) {
         Locator parsedLocator = byLocator(selector, args);
-        logInfo(methodName + ", element --> " + parsedLocator);
+        if (isShowLogs) logInfo(methodName + ", element --> " + parsedLocator);
         try {
-        return stateCheck.apply(parsedLocator);
+            return stateCheck.apply(parsedLocator);
         } catch (PlaywrightException e) {
             if (e.getMessage().contains("Object doesn't exist")) {
                 logInfo("Element already removed: " + selector);
@@ -349,15 +432,23 @@ public class PageTools extends DefaultLogger {
         }
     }
 
-    private void performOnLocator(String methodName, String selector, Object[] args, Consumer<Locator> action) {
-        Locator parsedLocator = byLocator(selector, args);
+    private void performOnLocator(String methodName, String selector, ElementSelection selection, Object[] args, Consumer<Locator> action) {
+        Locator parsedLocator = byLocator(selector, selection, args);
         logInfo(methodName + ", element --> " + parsedLocator);
         action.accept(parsedLocator);
+    }
+
+    private void performOnLocator(String methodName, String selector, Object[] args, Consumer<Locator> action) {
+        performOnLocator(methodName, selector, ElementSelection.DEFAULT, args, action);
     }
 
     private <T> T extractFromLocator(String methodName, String selector, Object[] args, Function<Locator, T> extractor) {
         Locator parsedLocator = byLocator(selector, args);
         logInfo(methodName + ", element --> " + parsedLocator);
         return extractor.apply(parsedLocator);
+    }
+
+    private String getHtml(String html) {
+        return html.replaceAll("amp;", "").replace("\"", "").trim();
     }
 }

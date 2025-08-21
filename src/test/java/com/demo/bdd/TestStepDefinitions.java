@@ -10,7 +10,7 @@ public class TestStepDefinitions extends DefaultLogger {
 
     @When("Open login page")
     public void openLoginPage() {
-        PlaywrightTools.openUrl(Constants.LOGIN_URL);
+        PlaywrightTools.openUrl(Constants.GOOGLE_HOMEPAGE_URL);
     }
 
     @When("Test step")

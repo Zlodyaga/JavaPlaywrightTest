@@ -3,21 +3,15 @@ package com.demo.bdd;
 import com.demo.core.logger.DefaultLogger;
 import com.demo.core.allure.AllureTools;
 import com.demo.core.config.PlaywrightConfig;
-import com.demo.core.config.PlaywrightHolder;
 import com.demo.data.GlobalContext;
+import com.demo.data.SiteContext;
 import com.demo.data.User;
-import com.demo.utils.Constants;
-import com.demo.utils.Generator;
-import com.demo.utils.PlaywrightTools;
-import com.demo.utils.PropertyLoader;
-import io.cucumber.java.After;
-import io.cucumber.java.AfterAll;
-import io.cucumber.java.Before;
-import io.cucumber.java.Scenario;
+import com.demo.utils.*;
+import io.cucumber.java.*;
 import io.qameta.allure.Allure;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,12 +20,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-@Slf4j
 public class Hooks extends DefaultLogger {
 
+    protected static PropertyLoader propertyStaticLoader;
     protected PropertyLoader propertyLoader;
+    protected HookReader hookReader = new HookReader();
     protected ThreadLocal<Scenario> scenario = new ThreadLocal<>();
-    private HashMap<String, String> passwordsForUsers = new HashMap<>();
+    private static HashMap<String, String> passwordsForUsers = new HashMap<>();
+
+    @BeforeAll
+    public static void beforeAll() {
+        loadSettingsFromFile();
+        loadConstantsFromFile(System.getProperty("environment", "google"));
+    }
 
     @Before(order = 1)
     public void beforeScenario(Scenario scenario) {
@@ -40,57 +41,63 @@ public class Hooks extends DefaultLogger {
         Thread.currentThread().setName(scenarioName);
         PlaywrightConfig.setScenarioName(scenarioName);
 
-        loadSettingsFromFile();
-        loadConstantsFromFile(System.getProperty("environment", "google"));
+        Constants.globalContext.set(new GlobalContext());
         loadUsersFromFile();
 
         PlaywrightConfig.createBrowserConfig();
 
         configLog(scenarioName);
-        logInfo("Opening page: " + Constants.LOGIN_URL);
 
-        PlaywrightTools.openUrl(Constants.LOGIN_URL);
+        PlaywrightTools.openUrl(Constants.GOOGLE_HOMEPAGE_URL);
 
         renameScenarioAllureWithArg(scenarioName);
+        hookReader.doBeforeActions(this.scenario.get().getSourceTagNames());
     }
 
     @After
     public synchronized void tearDown() {
         if (scenario.get().isFailed()) {
             byte[] screenshot = AllureTools.attachScreenshot(PlaywrightConfig.getPage());
-            scenario.get().attach(screenshot, "image/png", "Failure Screenshot");
-            scenario.get().attach(AllureTools.attachLogFile(), "text/plain", "Failure Log File");
-            scenario.get().attach(findAndReadVideo(extractCodePrefix(scenario.get().getName())), "video/webm", "Failure Video");
+            if (screenshot != null)
+                scenario.get().attach(screenshot, "image/png", "Failure Screenshot");
+            try {
+                scenario.get().attach(AllureTools.attachLogFile(), "text/plain", "Failure Log File");
+            } catch (Throwable e) {
+                logError("Failed to attach log file: " + e.getMessage());
+            }
+            try {
+                scenario.get().attach(findAndReadVideo(extractCodePrefix(scenario.get().getName())), "video/webm", "Failure Video");
+            } catch (Throwable e) {
+                logError("Failed to attach video file: " + e.getMessage());
+            }
         }
+        hookReader.doAfterActions(this.scenario.get().getSourceTagNames());
 
         logInfo("Closing Playwright browser...");
         PlaywrightConfig.closeBrowser();
         logInfo("Playwright browser closed!");
+        Constants.globalContext.remove();
         scenario.remove();
     }
 
-    @AfterAll
-    public static void afterAll() {
-        Constants.globalContext.remove();
-        PlaywrightHolder.shutdown();
-    }
+    private static void loadSettingsFromFile() {
+        propertyStaticLoader = new PropertyLoader("settings.properties");
+        Constants.NANO_TIMEOUT = Integer.parseInt(propertyStaticLoader.get("NANO_TIMEOUT"));
+        Constants.MICRO_TIMEOUT = Integer.parseInt(propertyStaticLoader.get("MICRO_TIMEOUT"));
+        Constants.MINI_TIMEOUT = Integer.parseInt(propertyStaticLoader.get("MINI_TIMEOUT"));
+        Constants.SMALL_TIMEOUT = Integer.parseInt(propertyStaticLoader.get("SMALL_TIMEOUT"));
+        Constants.BIG_TIMEOUT = Integer.parseInt(propertyStaticLoader.get("BIG_TIMEOUT"));
 
-    private void loadSettingsFromFile() {
-        propertyLoader = new PropertyLoader("settings.properties");
-        Constants.NANO_TIMEOUT = Integer.parseInt(propertyLoader.get("NANO_TIMEOUT"));
-        Constants.MICRO_TIMEOUT = Integer.parseInt(propertyLoader.get("MICRO_TIMEOUT"));
-        Constants.MINI_TIMEOUT = Integer.parseInt(propertyLoader.get("MINI_TIMEOUT"));
-        Constants.SMALL_TIMEOUT = Integer.parseInt(propertyLoader.get("SMALL_TIMEOUT"));
-        Constants.BIG_TIMEOUT = Integer.parseInt(propertyLoader.get("BIG_TIMEOUT"));
+        Constants.SCREEN_WIDTH = Integer.parseInt(propertyStaticLoader.get("SCREEN_WIDTH"));
+        Constants.SCREEN_HEIGHT = Integer.parseInt(propertyStaticLoader.get("SCREEN_HEIGHT"));
 
-        Constants.SCREEN_WIDTH = Integer.parseInt(propertyLoader.get("SCREEN_WIDTH"));
-        Constants.SCREEN_HEIGHT = Integer.parseInt(propertyLoader.get("SCREEN_HEIGHT"));
+        Constants.MAILINATOR_URL = propertyStaticLoader.get("MAILINATOR_URL");
 
-        Constants.TIMEOUT_BEFORE_FAIL = Integer.parseInt(propertyLoader.get("TIMEOUT_BEFORE_FAIL"));
+        Constants.TIMEOUT_BEFORE_FAIL = Integer.parseInt(propertyStaticLoader.get("TIMEOUT_BEFORE_FAIL"));
     }
 
     private void loadUsersFromFile() {
-        propertyLoader.reloadProperties("users.properties");
+        propertyLoader = new PropertyLoader("users.properties");
         ArrayList<User> users = new ArrayList<>();
 
         Set<String> keys = propertyLoader.getKeys();
@@ -113,10 +120,14 @@ public class Hooks extends DefaultLogger {
                     && emailPassword != null && !emailPassword.isEmpty()
                     && appPassword != null && !appPassword.isEmpty()) {
 
-                User user = new User(email, emailPassword, appPassword);
+                User user;
+                if (System.getProperty("mailinatorOff", "true").equals("true"))
+                    user = new User(email, emailPassword, appPassword, true);
+                else
+                    user = new User(email.replace("@gmail.com", "@mailinator.com"), emailPassword, appPassword, false);
 
                 if (passwordsForUsers.containsKey("user" + i)) {
-                    user.setPasswordBase64(passwordsForUsers.get("user" + i));
+                    user.setPasswordDecoded(passwordsForUsers.get("user" + i));
                 } else {
                     logInfo("Password for user " + i + " is not set in properties file " + System.getProperty("environment", "google") + ".properties");
                 }
@@ -129,17 +140,37 @@ public class Hooks extends DefaultLogger {
         Constants.globalContext.get().setEmailUsers(users);
     }
 
-    private void loadConstantsFromFile(String environment) {
-        Constants.globalContext.set(new GlobalContext());
-        propertyLoader.reloadProperties(environment + ".properties");
+    private static void loadConstantsFromFile(String environment) {
+        int index = environment.indexOf('-');
+        if (index == -1)
+            propertyStaticLoader.reloadProperties(environment + ".properties");
+        else
+            propertyStaticLoader.reloadProperties(environment.substring(0, index) + "/" + environment + ".properties");
 
-        Constants.BASE_URL = propertyLoader.get("base.url");
-        Constants.LOGIN_URL = Constants.BASE_URL + "/login";
+
+        String segmentCountStr = propertyStaticLoader.get("segment.count");
+        int segmentCount = segmentCountStr != null ? Integer.parseInt(segmentCountStr) : 1;
+        String baseUrl;
+
+        for (int segmentNumber = 1; segmentNumber <= segmentCount; segmentNumber++) {
+            for (int brandNumber = 1; propertyStaticLoader.get("base-" + segmentNumber + "-" + brandNumber + ".url") != null; brandNumber++) {
+                baseUrl = propertyStaticLoader.get("base-" + segmentNumber + "-" + brandNumber + ".url");
+                Constants.BASE_URL_MAP.put(new SiteContext(segmentNumber, brandNumber), baseUrl);
+            }
+        }
+
+        Constants.SITE_NAME = propertyStaticLoader.get("site.name").toLowerCase();
+        try {
+            Constants.API_AUTHORIZATION_HEADER = new String(Constants.DECODER.decode(propertyStaticLoader.get("api.authorization.header")), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            logStaticError("API KEY IS EMPTY IN " + environment + ".properties");
+            Constants.API_AUTHORIZATION_HEADER = "";
+        }
 
         String passwordForUser;
 
-        for (int i = 1; propertyLoader.get("user" + i + ".password") != null; i++) {
-            passwordForUser = propertyLoader.get("user" + i + ".password");
+        for (int i = 1; propertyStaticLoader.get("user" + i + ".password") != null; i++) {
+            passwordForUser = propertyStaticLoader.get("user" + i + ".password");
             passwordsForUsers.put("user" + i, passwordForUser);
         }
     }
@@ -151,7 +182,7 @@ public class Hooks extends DefaultLogger {
         }
 
         String createdEmail = email.substring(0, atIndex) + "+" + insert + email.substring(atIndex);
-        log.info("Created email: " + createdEmail);
+        logStaticInfo("Created email: " + createdEmail);
         return createdEmail;
     }
 
