@@ -36,7 +36,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/allure-results/
+/allure.results/
 /screenshots/
 /__MACOSX/
 /.idea/
